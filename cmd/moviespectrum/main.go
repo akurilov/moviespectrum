@@ -7,13 +7,11 @@ import (
 	"github.com/akurilov/moviespectrum/internal/youtube"
 	"os"
 
-	yt "github.com/kkdai/youtube/v2"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	log                 = logrus.WithFields(logrus.Fields{})
-	ytClient            = &yt.Client{}
 	videoOutFileNameFmt = os.TempDir() + string(os.PathSeparator) + "%s"
 )
 
@@ -21,7 +19,7 @@ func main() {
 
 	// get the video input stream
 	videoId := "wEf6lVAuYQ0"
-	in, err := youtube.GetVideoContent(ytClient, videoId)
+	in, err := youtube.GetVideoContent(videoId)
 	if in != nil {
 		defer (*in).Close()
 	}

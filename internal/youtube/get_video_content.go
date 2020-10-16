@@ -7,7 +7,11 @@ import (
 	"net/http"
 )
 
-func GetVideoContent(client *yt.Client, videoId string) (*io.ReadCloser, error) {
+var (
+	client = &yt.Client{}
+)
+
+func GetVideoContent(videoId string) (*io.ReadCloser, error) {
 	var in *io.ReadCloser = nil
 	var err error = nil
 	videoMetaData, err := client.GetVideo(videoId)

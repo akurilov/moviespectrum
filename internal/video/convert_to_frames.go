@@ -32,41 +32,39 @@ func ConvertToFrames(inFileName string) (*[]*image.RGBA, error) {
 
 func convertStream(inputCtx *gmf.FmtCtx, stream *gmf.Stream) (*[]*image.RGBA, error) {
 	var frames []*image.RGBA = nil
-	var err error = nil
-	frameNumber := 0
-	for {
-		packet, err := inputCtx.GetNextPacket()
-		if packet != nil {
-			defer packet.Free()
-		}
-		if err != nil {
-			if err != io.EOF {
-				log.Error(err)
+	encoder, err := gmf.FindEncoder(gmf.AV_CODEC_ID_RAWVIDEO)
+	if err == nil {
+		for {
+			inPacket, err := inputCtx.GetNextPacket()
+			if err != nil {
+				if err != io.EOF {
+					log.Error(err)
+				}
+				break
 			}
-			break
-		}
-		gmfFrames, err := stream.CodecCtx().Decode(packet)
-		if err != nil {
-			log.Warn(err)
-			continue
-		}
-		for _, gmfFrame := range gmfFrames {
-			log.Debug(fmt.Sprintf("Frame #%d: %s", frameNumber, gmfFrame))
-			var frame *image.RGBA = nil
-			frame, err = convertGmfFrame(gmfFrame)
-			if err == nil {
-				frames = append(frames, frame)
+			if inPacket == nil {
+				break
 			} else {
-				log.Errorf("failed to convert the GMF frame #%d", frameNumber)
+				defer inPacket.Free()
+				var decoderCtx = stream.CodecCtx()
+				gmfFrames, err := decoderCtx.Decode(inPacket)
+				if err != nil {
+					log.Warn(err)
+					continue
+				}
+				encoderCtx := gmf.NewCodecCtx(encoder)
+				defer gmf.Release(encoderCtx)
+				encoderCtx.
+					SetTimeBase(gmf.AVR{Num: 1, Den: 1}).
+					SetPixFmt(gmf.AV_PIX_FMT_RGBA).
+					SetWidth(decoderCtx.Width()).
+					SetHeight(decoderCtx.Height())
+				var outPackets []*gmf.Packet = nil
+				outPackets, err = encoderCtx.Encode(gmfFrames, drain)
 			}
-			frameNumber++
 		}
+	} else {
+		log.Errorf("failed to find the raw video encoder")
 	}
 	return &frames, err
-}
-
-func convertGmfFrame(gmfFrame *gmf.Frame) (*image.RGBA, error) {
-	var frame *image.RGBA = nil
-	var err error = nil
-	return frame, err
 }
