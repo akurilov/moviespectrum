@@ -2,79 +2,39 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
+	"github.com/akurilov/moviespectrum/internal/util"
+	"github.com/akurilov/moviespectrum/internal/video"
+	"github.com/akurilov/moviespectrum/internal/youtube"
 	"os"
 
-	"github.com/3d0c/gmf"
 	yt "github.com/kkdai/youtube/v2"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	log      = logrus.WithFields(logrus.Fields{})
-	ytClient = yt.Client{}
+	log                 = logrus.WithFields(logrus.Fields{})
+	ytClient            = &yt.Client{}
+	videoOutFileNameFmt = os.TempDir() + string(os.PathSeparator) + "%s"
 )
 
 func main() {
 
-	// download the specified youtube video
-	ytVideo, err := ytClient.GetVideo("wEf6lVAuYQ0")
-	if err != nil {
-		log.Panic(err)
+	// get the video input stream
+	videoId := "wEf6lVAuYQ0"
+	in, err := youtube.GetVideoContent(ytClient, videoId)
+	if in != nil {
+		defer (*in).Close()
 	}
-	videoFormat := &ytVideo.Formats[0]
-	videoStream, err := ytClient.GetStream(ytVideo, videoFormat)
-	videoBody := videoStream.Body
-	defer videoBody.Close()
-	if err != nil {
-		log.Panic(err)
-	}
-	tmpVideoFile, err := ioutil.TempFile("", "*")
-	tmpVideoFileName := tmpVideoFile.Name()
-	defer os.Remove(tmpVideoFileName)
-	if err != nil {
-		log.Panic(err)
-	}
-	tmpVideoFileSize, err := io.Copy(tmpVideoFile, videoBody)
-	if err != nil {
-		log.Panic(err)
-	}
-	tmpVideoFile.Close()
-	log.Info(fmt.Sprintf("Video temporary file ready '%s', %d bytes", tmpVideoFileName, tmpVideoFileSize))
-
-	// Using GMF to convert the
-	inputCtx, err := gmf.NewInputCtx(tmpVideoFileName)
-	defer inputCtx.Free()
-	if err != nil {
-		log.Panic(err)
-	}
-	srcVideoStream, err := inputCtx.GetBestStream(gmf.AVMEDIA_TYPE_VIDEO)
-	if err != nil {
-		log.Panic(err)
-	}
-	ist, err := inputCtx.GetStream(srcVideoStream.Index())
-	if err != nil {
-		log.Panic(err)
-	}
-	frameNumber := 0
-	for {
-		packet, err := inputCtx.GetNextPacket()
-		defer packet.Free()
-		if err != nil {
-			if err != io.EOF {
-				log.Panic(err)
-			}
-			break
+	if err == nil {
+		var size int64
+		videoOutputFileName := fmt.Sprint(videoOutFileNameFmt, videoId)
+		defer os.Remove(videoOutputFileName)
+		size, err = util.WriteToFile(in, videoOutputFileName)
+		log.Info(fmt.Sprintf("Written %d bytes from the input stream to the output file", size))
+		if err == nil {
+			err = video.ConvertToFrames(videoOutputFileName)
 		}
-		frames, err := ist.CodecCtx().Decode(packet)
-		if err != nil {
-			log.Warn(err)
-			continue
-		}
-		for _, frame := range frames {
-			log.Info(fmt.Sprintf("Frame #%d: %s", frameNumber, frame))
-			frameNumber++
-		}
+	} else {
+		log.Errorf("failed to get the video input stream: %s", err)
 	}
 }
