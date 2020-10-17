@@ -61,7 +61,7 @@ func convertStream(inputCtx *gmf.FmtCtx, stream *gmf.Stream) (*[]*image.RGBA, er
 		}
 		encoderCtx.
 			SetTimeBase(gmf.AVR{Num: 1, Den: 1}).
-			SetPixFmt(gmf.AV_PIX_FMT_RGBA).
+			SetPixFmt(gmf.AV_PIX_FMT_YUV444P).
 			SetWidth(width).
 			SetHeight(height)
 		err = encoderCtx.Open(nil)
