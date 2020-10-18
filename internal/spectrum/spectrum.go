@@ -64,7 +64,7 @@ func (ctx *Spectrum) ToImage() (*image.RGBA, error) {
 	const s = 1
 	for i, l := range ctx.levels {
 		h := float64(360*i) / float64(ctx.colorResolution)
-		colColor := colorful.Hsl(h, s, l)
+		colColor := colorful.Hsl(h, s, l/2)
 		for j := 0; j < int(ctx.levelResolution); j++ {
 			img.Set(i, j, colColor)
 		}

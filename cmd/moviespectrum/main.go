@@ -1,19 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/akurilov/moviespectrum/internal/spectrum"
 	"github.com/akurilov/moviespectrum/internal/video"
 	"github.com/sirupsen/logrus"
 	"image"
 	"image/png"
 	"os"
-)
-
-var (
-	tmpFilePrefix       = os.TempDir() + string(os.PathSeparator)
-	tmpFileNameFmt      = tmpFilePrefix + "%s"
-	spectrumFileNameFmt = tmpFileNameFmt + ".png"
 )
 
 func main() {
@@ -54,7 +47,7 @@ func main() {
 		img, err = normalizedSpectrum.ToImage()
 		log.Infof("Converted the spectrum to an image")
 		if err == nil {
-			outImgFileName := fmt.Sprintf(spectrumFileNameFmt, videoFileName)
+			outImgFileName := videoFileName + ".png"
 			outImgFile, err := os.Create(outImgFileName)
 			defer outImgFile.Close()
 			if err == nil {
