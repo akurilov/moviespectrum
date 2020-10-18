@@ -22,6 +22,9 @@ func ConvertToFrames(inFileName string) (*[]*image.RGBA, error) {
 	if err == nil {
 		var stream *gmf.Stream = nil
 		stream, err = inputCtx.GetBestStream(gmf.AVMEDIA_TYPE_VIDEO)
+		if stream != nil {
+			defer gmf.Release(stream)
+		}
 		if err == nil {
 			frames, err = convertStream(inputCtx, stream)
 		}
@@ -41,10 +44,7 @@ func convertStream(inputCtx *gmf.FmtCtx, stream *gmf.Stream) (*[]*image.RGBA, er
 
 	// decoder context
 	var decoderCtx = stream.CodecCtx()
-	defer func() {
-		gmf.Release(decoderCtx)
-		decoderCtx.Free()
-	}()
+	defer gmf.Release(decoderCtx)
 	encoder, err := gmf.FindEncoder(gmf.AV_CODEC_ID_RAWVIDEO)
 
 	width := decoderCtx.Width()
@@ -61,11 +61,10 @@ func convertStream(inputCtx *gmf.FmtCtx, stream *gmf.Stream) (*[]*image.RGBA, er
 		}
 		encoderCtx.
 			SetTimeBase(gmf.AVR{Num: 1, Den: 1}).
-			SetPixFmt(gmf.AV_PIX_FMT_YUV444P).
+			SetPixFmt(gmf.AV_PIX_FMT_RGBA).
 			SetWidth(width).
 			SetHeight(height)
 		err = encoderCtx.Open(nil)
-		defer encoderCtx.Free()
 	}
 
 	// rescaler
@@ -103,6 +102,9 @@ func convert(
 		inPacket.Free()
 		if err == nil {
 			newFrames := convertToGoImages(outPackets, decoderCtx)
+			for _, outPacket := range outPackets {
+				outPacket.Free()
+			}
 			frames = append(frames, newFrames...)
 		} else {
 			log.Warn(err)
@@ -124,6 +126,9 @@ func convertToGmfImages(
 	if err == nil {
 		outPackets, err = encoderCtx.Encode(gmfFrames, -1)
 	}
+	for _, gmfFrame := range gmfFrames {
+		gmfFrame.Free()
+	}
 	return outPackets, err
 }
 
@@ -136,7 +141,6 @@ func convertToGoImages(packets []*gmf.Packet, decoderCtx *gmf.CodecCtx) []*image
 		frame.Stride = 4 * width
 		frame.Rect = image.Rect(0, 0, width, height)
 		frames = append(frames, frame)
-		packet.Free()
 	}
 	return frames
 }
