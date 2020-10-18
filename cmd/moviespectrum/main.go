@@ -3,14 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/akurilov/moviespectrum/internal/spectrum"
-	"github.com/akurilov/moviespectrum/internal/util"
 	"github.com/akurilov/moviespectrum/internal/video"
-	"github.com/akurilov/moviespectrum/internal/youtube"
 	"github.com/sirupsen/logrus"
 	"image"
 	"image/png"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 )
 
@@ -21,74 +17,59 @@ var (
 )
 
 func main() {
-	go func() {
-		_ = http.ListenAndServe("localhost:8080", nil)
-	}()
-	for _, videoId := range os.Args[1:] {
-		log := logrus.WithFields(logrus.Fields{"videoId": videoId})
-		in, err := youtube.GetVideoContent(videoId)
-		if in != nil {
-			defer (*in).Close()
-		}
-		if err == nil {
-			var size int64
-			videoOutputFileName := fmt.Sprintf(tmpFileNameFmt, videoId)
-			defer os.Remove(videoOutputFileName)
-			size, err = util.WriteToFile(in, videoOutputFileName)
-			log.Infof("Written %d bytes from the input stream to the output file %s", size, videoOutputFileName)
-			var frames *[]*image.RGBA
-			if err == nil {
-				frames, err = video.ConvertToFrames(videoOutputFileName)
-				log.Infof("Got %d frames from the video", len(*frames))
-			}
-			rawSpectrum := spectrum.NewSpectrum(100, 100)
-			for i, frame := range *frames {
-				bytes := frame.Pix
-				(*frames)[i] = nil
-				pixelCount := len(bytes) / 4 // 4 channels: R, G, B, A
-				for i := 0; i < pixelCount; i++ {
-					r, g, b := bytes[i], bytes[i+1], bytes[i+2]
-					var cw *spectrum.ColorWeight
-					cw, err = spectrum.NewColorWeight(r, g, b)
-					if err == nil {
-						log.Debugf("Pixel # %d has color weight: h(%f), w(%f)", i, cw.Color(), cw.Weight())
-						err = rawSpectrum.AddMeasurement(cw)
-						if err != nil {
-							log.Errorf("failed to add the spectrum measurement: %v", cw)
-						}
-					} else {
-						log.Errorf(
-							"Failed to calculate the color weight for the color: r(%d), g(%d), b(%d)", r, g, b)
-					}
-				}
-			}
-			frames = nil
 
-			normalizedSpectrum := rawSpectrum.Normalize()
-			log.Infof("Normalized the spectrum")
-			var img *image.RGBA
-			img, err = normalizedSpectrum.ToImage()
-			log.Infof("Converted the spectrum to an image")
-			if err == nil {
-				outImgFileName := fmt.Sprintf(spectrumFileNameFmt, videoId)
-				outImgFile, err := os.Create(outImgFileName)
-				defer outImgFile.Close()
+	for _, videoFileName := range os.Args[1:] {
+
+		log := logrus.WithFields(logrus.Fields{"videoFileName": videoFileName})
+
+		frames, err := video.ConvertToFrames(videoFileName)
+		log.Infof("Got %d frames from the video", len(*frames))
+
+		rawSpectrum := spectrum.NewSpectrum(100, 100)
+		for i, frame := range *frames {
+			bytes := frame.Pix
+			(*frames)[i] = nil
+			pixelCount := len(bytes) / 4 // 4 channels: R, G, B, A
+			for i := 0; i < pixelCount; i++ {
+				r, g, b := bytes[i], bytes[i+1], bytes[i+2]
+				var cw *spectrum.ColorWeight
+				cw, err = spectrum.NewColorWeight(r, g, b)
 				if err == nil {
-					err = png.Encode(outImgFile, img)
-					if err == nil {
-						log.Infof(
-							"Processing done, spectrum saved to the corresponding PNG file %s", outImgFileName)
-					} else {
-						log.Errorf("failed to encode the PNG image: %s", err)
+					log.Debugf("Pixel # %d has color weight: h(%f), w(%f)", i, cw.Color(), cw.Weight())
+					err = rawSpectrum.AddMeasurement(cw)
+					if err != nil {
+						log.Errorf("failed to add the spectrum measurement: %v", cw)
 					}
 				} else {
-					log.Fatalf("failed to open the output image file: %s", err)
+					log.Errorf(
+						"Failed to calculate the color weight for the color: r(%d), g(%d), b(%d)", r, g, b)
+				}
+			}
+		}
+		frames = nil
+
+		normalizedSpectrum := rawSpectrum.Normalize()
+		log.Infof("Normalized the spectrum")
+		var img *image.RGBA
+		img, err = normalizedSpectrum.ToImage()
+		log.Infof("Converted the spectrum to an image")
+		if err == nil {
+			outImgFileName := fmt.Sprintf(spectrumFileNameFmt, videoFileName)
+			outImgFile, err := os.Create(outImgFileName)
+			defer outImgFile.Close()
+			if err == nil {
+				err = png.Encode(outImgFile, img)
+				if err == nil {
+					log.Infof(
+						"Processing done, spectrum saved to the corresponding PNG file %s", outImgFileName)
+				} else {
+					log.Errorf("failed to encode the PNG image: %s", err)
 				}
 			} else {
-				log.Fatalf("failed to generate the spectrum image: %s", err)
+				log.Fatalf("failed to open the output image file: %s", err)
 			}
 		} else {
-			log.Fatalf("failed to get the video input stream: %s", err)
+			log.Fatalf("failed to generate the spectrum image: %s", err)
 		}
 	}
 }

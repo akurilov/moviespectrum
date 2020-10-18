@@ -20,11 +20,12 @@ func (ctx *ColorWeight) Weight() float64 {
 
 func NewColorWeight(r, g, b uint8) (*ColorWeight, error) {
 	var err error = nil
-	nr, ng, nb := util.NormalizeRgb(r, g, b)
-	h, s, l := colorful.Color{R: nr, G: ng, B: nb}.Hsl()
-	weight, err := util.MedianChiSquare(l)
-	if err == nil {
-		weight = s * weight
-	}
+	h, s, l := rgbToHsl(r, g, b)
+	weight := s * util.ChiSquare(l, 0.5)
 	return &ColorWeight{h / 360, weight}, err
+}
+
+func rgbToHsl(r, g, b uint8) (float64, float64, float64) {
+	nr, ng, nb := util.NormalizeRgb(r, g, b)
+	return colorful.Color{R: nr, G: ng, B: nb}.Hsl()
 }
