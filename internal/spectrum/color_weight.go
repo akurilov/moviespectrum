@@ -1,8 +1,8 @@
 package spectrum
 
 import (
-	"github.com/akurilov/moviespectrum/internal/util"
 	"github.com/lucasb-eyer/go-colorful"
+	"math"
 )
 
 type ColorWeight struct {
@@ -19,13 +19,25 @@ func (ctx *ColorWeight) Weight() float64 {
 }
 
 func NewColorWeight(r, g, b uint8) (*ColorWeight, error) {
+	const medianValue = 0.5
+	const hueValueRange = 360
 	var err error = nil
 	h, s, l := rgbToHsl(r, g, b)
-	weight := s * util.ChiSquare(l, 0.5)
-	return &ColorWeight{h / 360, weight}, err
+	weight := s * chiSquare(l, medianValue)
+	return &ColorWeight{h / hueValueRange, weight}, err
 }
 
 func rgbToHsl(r, g, b uint8) (float64, float64, float64) {
-	nr, ng, nb := util.NormalizeRgb(r, g, b)
-	return colorful.Color{R: nr, G: ng, B: nb}.Hsl()
+	const uint8ValueRange = 0x100
+	normalizedRgb := colorful.Color{
+		R: float64(r) / uint8ValueRange,
+		G: float64(g) / uint8ValueRange,
+		B: float64(b) / uint8ValueRange,
+	}
+	return normalizedRgb.Hsl()
+}
+
+func chiSquare(x float64, expected float64) float64 {
+	expectedSquare := math.Pow(expected, 2)
+	return (expectedSquare - math.Pow(expected-x, 2)) / expectedSquare
 }
