@@ -4,7 +4,6 @@ import (
 	"github.com/3d0c/gmf"
 	"github.com/sirupsen/logrus"
 	"image"
-	"io"
 )
 
 var (
@@ -12,19 +11,16 @@ var (
 )
 
 type FileRgbaFramesProducer struct {
-	inputFileName   string
-	inputCtx        *gmf.FmtCtx
-	inputStream     *gmf.Stream
-	decoderCtx      *gmf.CodecCtx
-	swsCtx          *gmf.SwsCtx
-	encoder         *gmf.Codec
-	encoderCtx      *gmf.CodecCtx
-	srcPacketOutput chan *gmf.Packet
-	rawPacketOutput chan *gmf.Packet
-	frameOutput     chan *image.RGBA
+	inputCtx    *gmf.FmtCtx
+	inputStream *gmf.Stream
+	decoderCtx  *gmf.CodecCtx
+	swsCtx      *gmf.SwsCtx
+	encoder     *gmf.Codec
+	encoderCtx  *gmf.CodecCtx
+	frameOut    *RgbaFrameOutput
 }
 
-func NewFileRgbaFramesProducer(inputFileName string, buffSize int) (*FileRgbaFramesProducer, error) {
+func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*FileRgbaFramesProducer, error) {
 
 	var result *FileRgbaFramesProducer = nil
 
@@ -36,16 +32,12 @@ func NewFileRgbaFramesProducer(inputFileName string, buffSize int) (*FileRgbaFra
 		log.Errorf("failed to open the video file %s: %v", inputFileName, err)
 	}
 
-	var inputPacketProducer *GmfPacketOutput
-	if err == nil {
-		inputPacketProducer = NewGmfInputPacketProducer(buffSize, inputCtx, inputStream.Index())
-	}
-
 	var decoderCtx *gmf.CodecCtx
 	var swsCtx *gmf.SwsCtx
 	var width, height int
 	if err == nil {
-		decoderCtx, swsCtx, width, height, err = initDecoderCtx(inputStream)
+		decoderCtx = inputStream.CodecCtx()
+		swsCtx, width, height, err = initSwsCtx(decoderCtx)
 	} else {
 		log.Errorf("failed to get the video stream for the input context %v: %v", inputCtx, err)
 	}
@@ -64,27 +56,20 @@ func NewFileRgbaFramesProducer(inputFileName string, buffSize int) (*FileRgbaFra
 		log.Errorf("failed to find encoder for the raw video format: %v", err)
 	}
 
-	var streamFrameProducer *GmfStreamRgbaFrameProducer
+	var frameOut *RgbaFrameOutput
 	if err == nil {
-		streamFrameProducer = NewGmfSteamRgbaFrameProducer(buffSize, encoderCtx, inputStream, _, swsCtx)
+		frameOut = NewRgbaFrameOutput(out)
 	}
-
-	srcPacketOutput := make(chan *gmf.Packet, 1000)
-	rawPacketOutput := make(chan *gmf.Packet, 1000)
-	frameOutput := make(chan *image.RGBA, 1000)
 
 	if err == nil {
 		result = &FileRgbaFramesProducer{
-			inputFileName,
 			inputCtx,
 			inputStream,
 			decoderCtx,
 			swsCtx,
 			encoder,
 			encoderCtx,
-			srcPacketOutput,
-			rawPacketOutput,
-			frameOutput,
+			frameOut,
 		}
 	} else {
 		log.Errorf("failed to open the encoder context %v: %v", encoderCtx, err)
@@ -93,13 +78,12 @@ func NewFileRgbaFramesProducer(inputFileName string, buffSize int) (*FileRgbaFra
 	return result, err
 }
 
-func initDecoderCtx(stream *gmf.Stream) (*gmf.CodecCtx, *gmf.SwsCtx, int, int, error) {
-	decoderCtx := stream.CodecCtx()
+func initSwsCtx(decoderCtx *gmf.CodecCtx) (*gmf.SwsCtx, int, int, error) {
 	width := decoderCtx.Width()
 	height := decoderCtx.Height()
 	pixFmt := decoderCtx.PixFmt()
 	swsCtx, err := gmf.NewSwsCtx(width, height, pixFmt, width, height, gmf.AV_PIX_FMT_RGBA, gmf.SWS_FAST_BILINEAR)
-	return decoderCtx, swsCtx, width, height, err
+	return swsCtx, width, height, err
 }
 
 func initEncoderCtx(encoder *gmf.Codec, width int, height int) (*gmf.CodecCtx, error) {
@@ -124,95 +108,6 @@ func (ctx *FileRgbaFramesProducer) Close() {
 	gmf.Release(ctx.encoderCtx)
 }
 
-func (ctx *FileRgbaFramesProducer) ProduceFrameOutput() <-chan *image.RGBA {
-	go ctx.produceSrcPacketOutput()
-	go ctx.produceRawPacketOutput()
-	go ctx.produceFrameOutput()
-	return ctx.frameOutput
-}
+func (ctx *FileRgbaFramesProducer) Run() {
 
-func (ctx *FileRgbaFramesProducer) produceSrcPacketOutput() {
-	log.Infof("Started producing src packets")
-	count := 0
-	srcIdx := ctx.inputStream.Index()
-	for {
-		srcPacket, err := ctx.inputCtx.GetNextPacket()
-		if err == nil {
-			if srcIdx == srcPacket.StreamIndex() {
-				ctx.srcPacketOutput <- srcPacket
-				count++
-			}
-		} else {
-			if err == io.EOF {
-				break
-			} else {
-				log.Warnf("failed to get the next src video packet: %v", err)
-			}
-		}
-	}
-	close(ctx.srcPacketOutput)
-	log.Infof("Finished producing %d src packets", count)
-}
-
-func (ctx *FileRgbaFramesProducer) produceRawPacketOutput() {
-	log.Infof("Started producing raw packets")
-	count := 0
-	var rawPackets []*gmf.Packet
-	stream, err := ctx.inputCtx.GetStream(ctx.inputStream.Index())
-	defer gmf.Release(stream)
-	if err == nil {
-		for srcPacket := range ctx.srcPacketOutput {
-			rawPackets, err = ctx.toRawPackets(stream, srcPacket)
-			if err == nil {
-				for _, rawPacket := range rawPackets {
-					ctx.rawPacketOutput <- rawPacket
-				}
-				count += len(rawPackets)
-			} else {
-				log.Errorf("failed to convert the src packet (%v) to raw packet: %v", srcPacket, err)
-			}
-			srcPacket.Free()
-		}
-	} else {
-		log.Errorf("failed to get the stream by index %d: %v", ctx.inputStream.Index(), err)
-	}
-	close(ctx.rawPacketOutput)
-	log.Infof("Finished producing %d raw packets", count)
-}
-
-func (ctx *FileRgbaFramesProducer) toRawPackets(stream *gmf.Stream, inputPacket *gmf.Packet) ([]*gmf.Packet, error) {
-	var outPackets []*gmf.Packet = nil
-	gmfFrames, err := stream.CodecCtx().Decode(inputPacket)
-	if err == nil {
-		gmfFrames, err = gmf.DefaultRescaler(ctx.swsCtx, gmfFrames)
-	} else {
-		log.Errorf("failed to decode the input packet (%v): %v", inputPacket, err)
-	}
-	if err == nil {
-		outPackets, err = ctx.encoderCtx.Encode(gmfFrames, -1)
-	}
-	if err != nil {
-		log.Errorf("faield to encode the gmf frames: %v", err)
-	}
-	for _, gmfFrame := range gmfFrames {
-		gmfFrame.Free()
-	}
-	return outPackets, err
-}
-
-func (ctx *FileRgbaFramesProducer) produceFrameOutput() {
-	log.Infof("Started producing frames")
-	count := 0
-	width, height := ctx.decoderCtx.Width(), ctx.decoderCtx.Height()
-	for rawPacket := range ctx.rawPacketOutput {
-		frame := new(image.RGBA)
-		frame.Pix = rawPacket.Data()
-		frame.Stride = 4 * width
-		frame.Rect = image.Rect(0, 0, width, height)
-		ctx.frameOutput <- frame
-		count++
-		rawPacket.Free()
-	}
-	close(ctx.frameOutput)
-	log.Infof("Finished producing %d frames", count)
 }

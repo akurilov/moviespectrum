@@ -16,7 +16,7 @@ func NewRgbaFrameOutput(out chan<- *image.RGBA) *RgbaFrameOutput {
 	return &RgbaFrameOutput{log, out}
 }
 
-func (ctx *RgbaFrameOutput) ConsumeGmfPacket(
+func (ctx *RgbaFrameOutput) Consume(
 	srcPacketInput <-chan *gmf.Packet,
 	srcPacketConvertor *GnfPacketToRgbaFrameConvertor,
 ) {
@@ -36,8 +36,4 @@ func (ctx *RgbaFrameOutput) ConsumeGmfPacket(
 	}
 	close(ctx.out)
 	ctx.log.Infof("Finished producing %d video frame images", count)
-}
-
-func (ctx *RgbaFrameOutput) ConsumeFile(inputFile string) {
-
 }
