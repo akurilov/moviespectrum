@@ -19,7 +19,7 @@ func NewGmfPacketOutput(out chan<- *gmf.Packet) *GmfPacketOutput {
 	}
 }
 
-func (ctx *GmfPacketOutput) Consume(inputCtx *gmf.FmtCtx, inputStreamIndex int) {
+func (ctx *GmfPacketOutput) ConsumeGmfInput(inputCtx *gmf.FmtCtx, inputStreamIndex int) {
 	ctx.log.Infof("Started producing src packets")
 	count := 0
 	for {
