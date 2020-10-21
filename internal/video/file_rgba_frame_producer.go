@@ -11,7 +11,7 @@ var (
 	log = logrus.WithFields(logrus.Fields{})
 )
 
-type RgbaFramesConverter struct {
+type FileRgbaFramesProducer struct {
 	inputFileName   string
 	inputCtx        *gmf.FmtCtx
 	inputStream     *gmf.Stream
@@ -24,9 +24,9 @@ type RgbaFramesConverter struct {
 	frameOutput     chan *image.RGBA
 }
 
-func NewRgbaFramesConverter(inputFileName string) (*RgbaFramesConverter, error) {
+func NewFileRgbaFramesProducer(inputFileName string, buffSize int) (*FileRgbaFramesProducer, error) {
 
-	var result *RgbaFramesConverter = nil
+	var result *FileRgbaFramesProducer = nil
 
 	inputCtx, err := gmf.NewInputCtx(inputFileName)
 	var inputStream *gmf.Stream
@@ -34,6 +34,11 @@ func NewRgbaFramesConverter(inputFileName string) (*RgbaFramesConverter, error) 
 		inputStream, err = inputCtx.GetBestStream(gmf.AVMEDIA_TYPE_VIDEO)
 	} else {
 		log.Errorf("failed to open the video file %s: %v", inputFileName, err)
+	}
+
+	var inputPacketProducer *GmfPacketOutput
+	if err == nil {
+		inputPacketProducer = NewGmfInputPacketProducer(buffSize, inputCtx, inputStream.Index())
 	}
 
 	var decoderCtx *gmf.CodecCtx
@@ -59,12 +64,17 @@ func NewRgbaFramesConverter(inputFileName string) (*RgbaFramesConverter, error) 
 		log.Errorf("failed to find encoder for the raw video format: %v", err)
 	}
 
+	var streamFrameProducer *GmfStreamRgbaFrameProducer
+	if err == nil {
+		streamFrameProducer = NewGmfSteamRgbaFrameProducer(buffSize, encoderCtx, inputStream, _, swsCtx)
+	}
+
 	srcPacketOutput := make(chan *gmf.Packet, 1000)
 	rawPacketOutput := make(chan *gmf.Packet, 1000)
 	frameOutput := make(chan *image.RGBA, 1000)
 
 	if err == nil {
-		result = &RgbaFramesConverter{
+		result = &FileRgbaFramesProducer{
 			inputFileName,
 			inputCtx,
 			inputStream,
@@ -88,7 +98,7 @@ func initDecoderCtx(stream *gmf.Stream) (*gmf.CodecCtx, *gmf.SwsCtx, int, int, e
 	width := decoderCtx.Width()
 	height := decoderCtx.Height()
 	pixFmt := decoderCtx.PixFmt()
-	swsCtx, err := gmf.NewSwsCtx(width, height, pixFmt, width, height, pixFmt, gmf.SWS_FAST_BILINEAR)
+	swsCtx, err := gmf.NewSwsCtx(width, height, pixFmt, width, height, gmf.AV_PIX_FMT_RGBA, gmf.SWS_FAST_BILINEAR)
 	return decoderCtx, swsCtx, width, height, err
 }
 
@@ -105,7 +115,7 @@ func initEncoderCtx(encoder *gmf.Codec, width int, height int) (*gmf.CodecCtx, e
 	return encoderCtx, encoderCtx.Open(nil)
 }
 
-func (ctx *RgbaFramesConverter) Close() {
+func (ctx *FileRgbaFramesProducer) Close() {
 	ctx.inputCtx.Free()
 	gmf.Release(ctx.inputStream)
 	gmf.Release(ctx.decoderCtx)
@@ -114,14 +124,14 @@ func (ctx *RgbaFramesConverter) Close() {
 	gmf.Release(ctx.encoderCtx)
 }
 
-func (ctx *RgbaFramesConverter) ProduceFrameOutput() <-chan *image.RGBA {
+func (ctx *FileRgbaFramesProducer) ProduceFrameOutput() <-chan *image.RGBA {
 	go ctx.produceSrcPacketOutput()
 	go ctx.produceRawPacketOutput()
 	go ctx.produceFrameOutput()
 	return ctx.frameOutput
 }
 
-func (ctx *RgbaFramesConverter) produceSrcPacketOutput() {
+func (ctx *FileRgbaFramesProducer) produceSrcPacketOutput() {
 	log.Infof("Started producing src packets")
 	count := 0
 	srcIdx := ctx.inputStream.Index()
@@ -144,7 +154,7 @@ func (ctx *RgbaFramesConverter) produceSrcPacketOutput() {
 	log.Infof("Finished producing %d src packets", count)
 }
 
-func (ctx *RgbaFramesConverter) produceRawPacketOutput() {
+func (ctx *FileRgbaFramesProducer) produceRawPacketOutput() {
 	log.Infof("Started producing raw packets")
 	count := 0
 	var rawPackets []*gmf.Packet
@@ -170,7 +180,7 @@ func (ctx *RgbaFramesConverter) produceRawPacketOutput() {
 	log.Infof("Finished producing %d raw packets", count)
 }
 
-func (ctx *RgbaFramesConverter) toRawPackets(stream *gmf.Stream, inputPacket *gmf.Packet) ([]*gmf.Packet, error) {
+func (ctx *FileRgbaFramesProducer) toRawPackets(stream *gmf.Stream, inputPacket *gmf.Packet) ([]*gmf.Packet, error) {
 	var outPackets []*gmf.Packet = nil
 	gmfFrames, err := stream.CodecCtx().Decode(inputPacket)
 	if err == nil {
@@ -190,7 +200,7 @@ func (ctx *RgbaFramesConverter) toRawPackets(stream *gmf.Stream, inputPacket *gm
 	return outPackets, err
 }
 
-func (ctx *RgbaFramesConverter) produceFrameOutput() {
+func (ctx *FileRgbaFramesProducer) produceFrameOutput() {
 	log.Infof("Started producing frames")
 	count := 0
 	width, height := ctx.decoderCtx.Width(), ctx.decoderCtx.Height()

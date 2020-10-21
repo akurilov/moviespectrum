@@ -7,7 +7,6 @@ import (
 	"image"
 	"image/png"
 	"os"
-	"strconv"
 )
 
 func main() {
@@ -17,11 +16,7 @@ func main() {
 		if err == nil {
 			rawSpectrum := spectrum.NewSpectrum(100, 100)
 			frameBuff := converter.ProduceFrameOutput()
-			count := 0
 			for frame := range frameBuff {
-				frameFile, _ := os.Create(videoFileName + "_frame" + strconv.Itoa(count) + ".png")
-				png.Encode(frameFile, frame)
-				frameFile.Close()
 				bytes := frame.Pix
 				pixelCount := len(bytes) / 4 // 4 channels: R, G, B, A
 				for i := 0; i < pixelCount; i++ {
