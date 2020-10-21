@@ -9,36 +9,21 @@ import (
 	"os"
 )
 
+const (
+	FrameBuffSize = 100
+)
+
 func main() {
 	for _, videoFileName := range os.Args[1:] {
 		log := logrus.WithFields(logrus.Fields{"videoFileName": videoFileName})
-		frameBuff := make(chan *image.RGBA, 100)
+		frameBuff := make(chan *image.RGBA, FrameBuffSize)
 		frameProducer, err := video.NewFileRgbaFramesProducer(videoFileName, frameBuff)
 		if err == nil {
-			spectrumAccumulator := spectrum.NewSpectrum(100, 100)
+			spectrumPromise := make(chan *image.RGBA)
+			spectrumProducer := spectrum.NewProducer(frameBuff, spectrumPromise)
 			go frameProducer.Produce()
-			for frame := range frameBuff {
-				bytes := frame.Pix
-				pixelCount := len(bytes) / 4 // 4 channels: R, G, B, A
-				for i := 0; i < pixelCount; i++ {
-					r, g, b := bytes[i], bytes[i+1], bytes[i+2]
-					var cw *spectrum.ColorWeight
-					cw, err = spectrum.NewColorWeight(r, g, b)
-					if err == nil {
-						log.Debugf("Pixel # %d has color weight: h(%f), w(%f)", i, cw.Color(), cw.Weight())
-						err = spectrumAccumulator.AddMeasurement(cw)
-						if err != nil {
-							log.Errorf("failed to add the spectrum measurement: %v", cw)
-						}
-					} else {
-						log.Errorf(
-							"Failed to calculate the color weight for the color: r(%d), g(%d), b(%d)", r, g, b)
-					}
-				}
-			}
-			log.Info("Finished the conversion to raw spectrum")
-			var img *image.RGBA
-			img, err = spectrumAccumulator.ToImage()
+			go spectrumProducer.Produce()
+			img := <-spectrumPromise
 			log.Infof("Converted the spectrum to an image")
 			if err == nil {
 				outImgFileName := videoFileName + ".png"

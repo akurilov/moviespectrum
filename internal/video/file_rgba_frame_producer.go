@@ -6,8 +6,10 @@ import (
 	"image"
 )
 
-var (
-	log = logrus.WithFields(logrus.Fields{})
+const (
+	RescaleFrameWidth  = 256
+	RescaleFrameHeight = 144
+	SrcPacketBuffSize  = 100
 )
 
 type FileRgbaFramesProducer struct {
@@ -24,6 +26,7 @@ type FileRgbaFramesProducer struct {
 func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*FileRgbaFramesProducer, error) {
 
 	var result *FileRgbaFramesProducer = nil
+	log := logrus.WithFields(logrus.Fields{})
 
 	inputCtx, err := gmf.NewInputCtx(inputFileName)
 	var inputStream *gmf.Stream
@@ -61,7 +64,7 @@ func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*F
 	var srcPacketProducer *GmfPacketProducer
 	var frameProducer *RgbaFrameProducer
 	if err == nil {
-		srcPacketBuff = make(chan *gmf.Packet, 100)
+		srcPacketBuff = make(chan *gmf.Packet, SrcPacketBuffSize)
 		srcPacketProducer = NewGmfPacketProducer(inputCtx, inputStream.Index(), srcPacketBuff)
 		convertor := NewGmfPacketToRgbaFrameConvertor(inputStream, swsCtx, encoderCtx)
 		frameProducer = NewRgbaFrameProducer(srcPacketBuff, convertor, out)
@@ -89,7 +92,15 @@ func initSwsCtx(decoderCtx *gmf.CodecCtx) (*gmf.SwsCtx, int, int, error) {
 	width := decoderCtx.Width()
 	height := decoderCtx.Height()
 	pixFmt := decoderCtx.PixFmt()
-	swsCtx, err := gmf.NewSwsCtx(width, height, pixFmt, width, height, gmf.AV_PIX_FMT_RGBA, gmf.SWS_FAST_BILINEAR)
+	swsCtx, err := gmf.NewSwsCtx(
+		width,
+		height,
+		pixFmt,
+		RescaleFrameWidth,
+		RescaleFrameHeight,
+		gmf.AV_PIX_FMT_RGBA,
+		gmf.SWS_FAST_BILINEAR,
+	)
 	return swsCtx, width, height, err
 }
 
