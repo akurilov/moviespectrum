@@ -11,13 +11,14 @@ var (
 )
 
 type FileRgbaFramesProducer struct {
-	inputCtx    *gmf.FmtCtx
-	inputStream *gmf.Stream
-	decoderCtx  *gmf.CodecCtx
-	swsCtx      *gmf.SwsCtx
-	encoder     *gmf.Codec
-	encoderCtx  *gmf.CodecCtx
-	frameOut    *RgbaFrameOutput
+	inputCtx          *gmf.FmtCtx
+	inputStream       *gmf.Stream
+	decoderCtx        *gmf.CodecCtx
+	swsCtx            *gmf.SwsCtx
+	encoder           *gmf.Codec
+	encoderCtx        *gmf.CodecCtx
+	srcPacketProducer *GmfPacketProducer
+	frameProducer     *RgbaFrameProducer
 }
 
 func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*FileRgbaFramesProducer, error) {
@@ -56,9 +57,14 @@ func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*F
 		log.Errorf("failed to find encoder for the raw video format: %v", err)
 	}
 
-	var frameOut *RgbaFrameOutput
+	var srcPacketBuff chan *gmf.Packet
+	var srcPacketProducer *GmfPacketProducer
+	var frameProducer *RgbaFrameProducer
 	if err == nil {
-		frameOut = NewRgbaFrameOutput(out)
+		srcPacketBuff = make(chan *gmf.Packet, 100)
+		srcPacketProducer = NewGmfPacketProducer(inputCtx, inputStream.Index(), srcPacketBuff)
+		convertor := NewGmfPacketToRgbaFrameConvertor(inputStream, swsCtx, encoderCtx)
+		frameProducer = NewRgbaFrameProducer(srcPacketBuff, convertor, out)
 	}
 
 	if err == nil {
@@ -69,7 +75,8 @@ func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*F
 			swsCtx,
 			encoder,
 			encoderCtx,
-			frameOut,
+			srcPacketProducer,
+			frameProducer,
 		}
 	} else {
 		log.Errorf("failed to open the encoder context %v: %v", encoderCtx, err)
@@ -99,15 +106,17 @@ func initEncoderCtx(encoder *gmf.Codec, width int, height int) (*gmf.CodecCtx, e
 	return encoderCtx, encoderCtx.Open(nil)
 }
 
-func (ctx *FileRgbaFramesProducer) Close() {
+func (ctx *FileRgbaFramesProducer) Produce() {
+	go ctx.srcPacketProducer.Produce()
+	ctx.frameProducer.Produce()
+	ctx.close()
+}
+
+func (ctx *FileRgbaFramesProducer) close() {
 	ctx.inputCtx.Free()
 	gmf.Release(ctx.inputStream)
 	gmf.Release(ctx.decoderCtx)
 	ctx.swsCtx.Free()
 	gmf.Release(ctx.encoder)
 	gmf.Release(ctx.encoderCtx)
-}
-
-func (ctx *FileRgbaFramesProducer) Run() {
-
 }

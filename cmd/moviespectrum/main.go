@@ -6,16 +6,25 @@ import (
 	"github.com/sirupsen/logrus"
 	"image"
 	"image/png"
+	"log"
 	"os"
 )
 
 func main() {
 	for _, videoFileName := range os.Args[1:] {
 		log := logrus.WithFields(logrus.Fields{"videoFileName": videoFileName})
-		converter, err := video.NewRgbaFramesConverter(videoFileName)
+		frameBuff := make(chan *image.RGBA, 100)
+		frameProducer, err := video.NewFileRgbaFramesProducer(videoFileName, frameBuff)
+		if err == nil {
+			go frameProducer.Produce()
+
+		} else {
+			log.Fatal("failed to init the frame producer")
+		}
+
 		if err == nil {
 			rawSpectrum := spectrum.NewSpectrum(100, 100)
-			frameBuff := converter.ProduceFrameOutput()
+			frameBuff := frameProducer.ProduceFrameOutput()
 			for frame := range frameBuff {
 				bytes := frame.Pix
 				pixelCount := len(bytes) / 4 // 4 channels: R, G, B, A
@@ -36,7 +45,7 @@ func main() {
 				}
 			}
 			log.Info("Finished the conversion to raw spectrum")
-			converter.Close()
+			frameProducer.Close()
 			normalizedSpectrum := rawSpectrum.Normalize()
 			log.Info("Normalized the spectrum")
 			var img *image.RGBA
