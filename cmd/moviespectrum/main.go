@@ -6,7 +6,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"image"
 	"image/png"
-	"log"
 	"os"
 )
 
@@ -16,15 +15,8 @@ func main() {
 		frameBuff := make(chan *image.RGBA, 100)
 		frameProducer, err := video.NewFileRgbaFramesProducer(videoFileName, frameBuff)
 		if err == nil {
+			spectrumAccumulator := spectrum.NewSpectrum(100, 100)
 			go frameProducer.Produce()
-
-		} else {
-			log.Fatal("failed to init the frame producer")
-		}
-
-		if err == nil {
-			rawSpectrum := spectrum.NewSpectrum(100, 100)
-			frameBuff := frameProducer.ProduceFrameOutput()
 			for frame := range frameBuff {
 				bytes := frame.Pix
 				pixelCount := len(bytes) / 4 // 4 channels: R, G, B, A
@@ -34,7 +26,7 @@ func main() {
 					cw, err = spectrum.NewColorWeight(r, g, b)
 					if err == nil {
 						log.Debugf("Pixel # %d has color weight: h(%f), w(%f)", i, cw.Color(), cw.Weight())
-						err = rawSpectrum.AddMeasurement(cw)
+						err = spectrumAccumulator.AddMeasurement(cw)
 						if err != nil {
 							log.Errorf("failed to add the spectrum measurement: %v", cw)
 						}
@@ -45,11 +37,8 @@ func main() {
 				}
 			}
 			log.Info("Finished the conversion to raw spectrum")
-			frameProducer.Close()
-			normalizedSpectrum := rawSpectrum.Normalize()
-			log.Info("Normalized the spectrum")
 			var img *image.RGBA
-			img, err = normalizedSpectrum.ToImage()
+			img, err = spectrumAccumulator.ToImage()
 			log.Infof("Converted the spectrum to an image")
 			if err == nil {
 				outImgFileName := videoFileName + ".png"
@@ -69,6 +58,8 @@ func main() {
 			} else {
 				log.Fatalf("failed to generate the spectrum image: %s", err)
 			}
+		} else {
+			log.Fatalf("failed to init the frame producer: %s", err)
 		}
 	}
 }

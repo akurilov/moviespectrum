@@ -40,7 +40,7 @@ func (ctx *Spectrum) AddMeasurement(measurement *ColorWeight) error {
 	return err
 }
 
-func (ctx *Spectrum) Normalize() *Spectrum {
+func (ctx *Spectrum) normalize() []float64 {
 	maxLevel := 0.0
 	for _, level := range ctx.levels {
 		if level > maxLevel {
@@ -53,16 +53,17 @@ func (ctx *Spectrum) Normalize() *Spectrum {
 			normalizedLevels[i] = level / maxLevel
 		}
 	}
-	return &Spectrum{ctx.colorResolution, ctx.levelResolution, normalizedLevels}
+	return normalizedLevels
 }
 
 func (ctx *Spectrum) ToImage() (*image.RGBA, error) {
+	normalizedLevels := ctx.normalize()
 	width := int(ctx.colorResolution)
 	height := int(ctx.levelResolution)
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	var err error = nil
 	const s = 1
-	for i, l := range ctx.levels {
+	for i, l := range normalizedLevels {
 		h := float64(360*i) / float64(ctx.colorResolution)
 		colColor := colorful.Hsl(h, s, l/2)
 		for j := 0; j < int(ctx.levelResolution); j++ {
