@@ -3,6 +3,7 @@ package spectrum
 import (
 	"github.com/sirupsen/logrus"
 	"image"
+	"sync/atomic"
 )
 
 const (
@@ -10,18 +11,19 @@ const (
 	Height = 100
 )
 
-type Producer struct {
-	log        *logrus.Entry
-	frameInput <-chan *image.RGBA
-	out        chan<- *image.RGBA
+type ProducerImpl struct {
+	log           *logrus.Entry
+	frameInput    <-chan *image.RGBA
+	out           chan<- *image.RGBA
+	consumedCount uint64
 }
 
-func NewProducer(frameInput <-chan *image.RGBA, out chan<- *image.RGBA) *Producer {
+func NewProducerImpl(frameInput <-chan *image.RGBA, out chan<- *image.RGBA) *ProducerImpl {
 	log := logrus.WithFields(logrus.Fields{})
-	return &Producer{log, frameInput, out}
+	return &ProducerImpl{log, frameInput, out, 0}
 }
 
-func (ctx *Producer) Produce() {
+func (ctx *ProducerImpl) Produce() {
 	accumulator := NewSpectrum(Width, Height)
 	for frame := range ctx.frameInput {
 		bytes := frame.Pix
@@ -40,6 +42,7 @@ func (ctx *Producer) Produce() {
 					"Failed to calculate the color weight for the color: r(%d), g(%d), b(%d)", r, g, b)
 			}
 		}
+		atomic.AddUint64(&ctx.consumedCount, 1)
 	}
 	logrus.Info("Finished the spectrum accumulatiom, converting to the image")
 	spectrumImg, err := accumulator.ToImage()
@@ -49,4 +52,8 @@ func (ctx *Producer) Produce() {
 		logrus.Errorf("failed to generate the spectrum image: %v", err)
 	}
 	close(ctx.out)
+}
+
+func (ctx *ProducerImpl) ConsumedCount() uint64 {
+	return atomic.LoadUint64(&ctx.consumedCount)
 }

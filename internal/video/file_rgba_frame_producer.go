@@ -40,6 +40,10 @@ func NewFileRgbaFramesProducer(inputFileName string, out chan<- *image.RGBA) (*F
 	var swsCtx *gmf.SwsCtx
 	var width, height int
 	if err == nil {
+		duration := inputCtx.Duration()
+		log.Infof("Video duration: %f [s]", duration)
+		approxFrameCount := inputStream.GetAvgFrameRate().AVR().Av2qd() * duration
+		log.Infof("Total frame count estimate: %d", int(approxFrameCount))
 		decoderCtx = inputStream.CodecCtx()
 		swsCtx, width, height, err = initSwsCtx(decoderCtx)
 	} else {
@@ -130,4 +134,8 @@ func (ctx *FileRgbaFramesProducer) close() {
 	ctx.swsCtx.Free()
 	gmf.Release(ctx.encoder)
 	gmf.Release(ctx.encoderCtx)
+}
+
+func (ctx *FileRgbaFramesProducer) ConsumedCount() uint64 {
+	return ctx.frameProducer.ConsumedCount()
 }

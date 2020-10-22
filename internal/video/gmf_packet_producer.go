@@ -4,6 +4,7 @@ import (
 	"github.com/3d0c/gmf"
 	"github.com/sirupsen/logrus"
 	"io"
+	"sync/atomic"
 )
 
 type GmfPacketProducer struct {
@@ -11,6 +12,7 @@ type GmfPacketProducer struct {
 	inputCtx         *gmf.FmtCtx
 	inputStreamIndex int
 	out              chan<- *gmf.Packet
+	consumedCount    uint64
 }
 
 func NewGmfPacketProducer(inputCtx *gmf.FmtCtx, inputStreamIndex int, out chan<- *gmf.Packet) *GmfPacketProducer {
@@ -20,6 +22,7 @@ func NewGmfPacketProducer(inputCtx *gmf.FmtCtx, inputStreamIndex int, out chan<-
 		inputCtx,
 		inputStreamIndex,
 		out,
+		0,
 	}
 }
 
@@ -40,7 +43,12 @@ func (ctx *GmfPacketProducer) Produce() {
 				ctx.log.Warnf("failed to get the next src video packet: %v", err)
 			}
 		}
+		atomic.AddUint64(&ctx.consumedCount, 1)
 	}
 	close(ctx.out)
 	ctx.log.Infof("Finished producing %d src packets", count)
+}
+
+func (ctx *GmfPacketProducer) ConsumedCount() uint64 {
+	return atomic.LoadUint64(&ctx.consumedCount)
 }

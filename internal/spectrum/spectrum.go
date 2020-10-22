@@ -3,8 +3,14 @@ package spectrum
 import (
 	"errors"
 	"fmt"
+	"github.com/akurilov/moviespectrum/internal/draw"
 	"github.com/lucasb-eyer/go-colorful"
 	"image"
+	"image/color"
+)
+
+const (
+	HueRange = 360
 )
 
 type Spectrum struct {
@@ -63,12 +69,19 @@ func (ctx *Spectrum) ToImage() (*image.RGBA, error) {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	var err error = nil
 	const s = 1
+	lineColor := &color.RGBA{R: 255, G: 255, B: 255, A: 128}
+	var pointFrom *image.Point
 	for i, l := range normalizedLevels {
-		h := float64(360*i) / float64(ctx.colorResolution)
+		h := float64(HueRange*i) / float64(ctx.colorResolution)
 		colColor := colorful.Hsl(h, s, l/2)
 		for j := 0; j < int(ctx.levelResolution); j++ {
 			img.Set(i, j, colColor)
 		}
+		pointTo := &image.Point{X: i, Y: int(float64(height) * (1 - l))}
+		if i > 0 {
+			draw.Line(img, lineColor, pointFrom, pointTo)
+		}
+		pointFrom = pointTo
 	}
 	return img, err
 }
