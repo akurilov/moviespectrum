@@ -33,7 +33,7 @@ The resulting spectrum image file is saved to the file with the same file name a
 4. Color weight = Saturation * Median lightness difference
 5. Median lightness difference = chi square for the pixel's lightness and lightness range middle 
 
-## Most popular movies
+## Some popular movies
 
 | Year | Source Video Link | Result Spectrum |
 |------|-------------------|-----------------|
