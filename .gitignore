@@ -15,4 +15,5 @@
 # vendor/
 
 moviespectrum
+.idea/*
 *.mp4
