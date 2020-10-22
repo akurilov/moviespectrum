@@ -40,7 +40,7 @@ The resulting spectrum image file is saved to the file with the same file name a
 | 1975 | [Jaws - Theatrical Trailer (HD) (1975)](https://www.youtube.com/watch?v=4pxkU9GVAoA) | <img src="examples/Jaws%20-%20Theatrical%20Trailer%20(HD)%20(1975)-4pxkU9GVAoA.mp4.png"/> |
 | 1977 | [Star Wars A New Hope 1977 Trailer](https://www.youtube.com/watch?v=1g3_CFmnU7k) | <img src="examples/Star%20Wars%20A%20New%20Hope%201977%20Trailer-1g3_CFmnU7k.mp4.png"/> |
 | 1985 | [Back To The Future (1985) Theatrical Trailer - Michael J. Fox Movie HD](https://www.youtube.com/watch?v=qvsgGtivCgs) | <img src="examples/Back%20To%20The%20Future%20(1985)%20Theatrical%20Trailer%20-%20Michael%20J.%20Fox%20Movie%20HD-qvsgGtivCgs.mp4.png"/> |
-| 1991 | [Terminator 2: Judgment Day (1991) Trailer #1 Movieclips Classic Trailers](https://www.youtube.com/watch?v=CRRlbK5w8AE) | <img src="examples/Terminator%202%20-%20Judgment%20Day%20(1991)%20Trailer%20#1%20_%20Movieclips%20Classic%20Trailers-CRRlbK5w8AE.mp4.png"/> |
+| 1991 | [Terminator 2: Judgment Day (1991) Trailer #1 Movieclips Classic Trailers](https://www.youtube.com/watch?v=CRRlbK5w8AE) | <img src="examples/Terminator%202%20-%20Judgment%20Day%20%281991%29%20Trailer%20%231%20_%20Movieclips%20Classic%20Trailers-CRRlbK5w8AE.mp4.png"/> |
 | | []() | <img src="examples/"/> |
 | | []() | <img src="examples/"/> |
 | | []() | <img src="examples/"/> |
