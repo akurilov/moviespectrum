@@ -25,9 +25,8 @@ The resulting spectrum image file is saved to the file with the same file name a
 
 ## How it works
 
-1. Get all video pixels
-2. Convert pixel to RGB
-3. Convert pixel to HSL
-4. Spectrum X axis is pixel's Hue
-5. Color weight = Saturation * Median lightness difference
-6. Median lightness difference = chi square for the pixel's lightness and lightness range middle 
+1. Convert the source video to 256x144 RGB frames
+2. Convert each pixel to HSL
+3. Spectrum X axis is pixel's Hue
+4. Color weight = Saturation * Median lightness difference
+5. Median lightness difference = chi square for the pixel's lightness and lightness range middle 
