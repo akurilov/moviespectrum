@@ -8,7 +8,9 @@ A command line tool to generate the color spectrum for a given input video file.
 ## Usage
 
 Build:
-```go build cmd/moviespectrum.go```
+```
+go build cmd/moviespectrum.go
+```
 
 Prepare a video file, e.g. download it from youtube:
 ```
