@@ -45,7 +45,7 @@ The resulting spectrum image file is saved to the file with the same file name a
 | 1994 | [Pulp Fiction (1994) Official Trailer - Samuel L. Jackson, John Travolta Movie HD](https://www.youtube.com/watch?v=5ZAhzsi1ybM) | <img src="examples/Pulp%20Fiction%20%281994%29%20Official%20Trailer%20-%20Samuel%20L.%20Jackson%2C%20John%20Travolta%20Movie%20HD-5ZAhzsi1ybM.mp4.png"/> |
 | 1994 | [The Lion King - Original Release Trailer (1994)](https://www.youtube.com/watch?v=hY7xBISLBIA) | <img src="examples/The%20Lion%20King%20-%20Original%20Release%20Trailer%20%281994%29-hY7xBISLBIA.mp4.png"/> |
 | 1994 | [Forrest Gump - Trailer](https://www.youtube.com/watch?v=bLvqoHBptjg) | <img src="examples/Forrest%20Gump%20-%20Trailer-bLvqoHBptjg.mp4.png"/> |
-| | []() | <img src="examples/"/> |
+| 1995 | [Braveheart Trailer - 1995 HQ](https://www.youtube.com/watch?v=1cnoM8EiGGU) | <img src="examples/Braveheart%20Trailer%20-%201995%20HQ-1cnoM8EiGGU.mp4.png"/> |
 | | []() | <img src="examples/"/> |
 | | []() | <img src="examples/"/> |
 | | []() | <img src="examples/"/> |
