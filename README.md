@@ -3,7 +3,7 @@
 A command line tool to generate the color spectrum for a given input video file.
 | Source video | Result |
 |--------------|--------|
-| ![video](Screenshot_20201022_103659.png =360x) | ![spectrum](KikoRiki%20Ep.%206%20-%20Season%203%20-%20The Border-3-HiGBJ7nJ0.mp4.png)
+| <img src="Screenshot_20201022_103659.png" width="360"> | ![spectrum](KikoRiki%20Ep.%206%20-%20Season%203%20-%20The Border-3-HiGBJ7nJ0.mp4.png)
 
 ## Usage
 
