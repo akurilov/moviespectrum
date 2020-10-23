@@ -16,7 +16,7 @@ const (
 
 func main() {
 	videoFileName := os.Args[1]
-	log := logrus.WithFields(logrus.Fields{"videoFileName": videoFileName})
+	log := logrus.WithFields(logrus.Fields{})
 	frameBuff := make(chan *image.RGBA, FrameBuffSize)
 	frameProducer, err := video.NewFileRgbaFramesProducer(videoFileName, frameBuff)
 	if err == nil {

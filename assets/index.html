@@ -1,0 +1,38 @@
+</html>
+    <head>
+        <title>Moviespectrum</title>
+    </head>
+    <body>
+        <h1>Moviespectrum</h1>
+        <table>
+            <tr>
+                <td style="vertical-align; height: 100%">
+                    <fieldset style="height: 100%">
+                        <legend>Select the video file to get its spectrum</legend>
+                        <form
+                                action="/upload"
+                                method="post"
+                                enctype="multipart/form-data">
+                            <input type="file" id="file" name="file" accept="video/*"/>
+                            <br/>
+                            <input type="submit" value="Send"/>
+                        </form>
+                    </fieldset>
+                </td>
+                <td style="vertical-align:top; height: 100%">
+                    <fieldset style="height: 100%">
+                        <legend>Or specify the youtube video link</legend>
+                        <form
+                                action="/youtube"
+                                method="post"
+                                enctype="multipart/form-data">
+                            <input type="url" id="url" name="url"/>
+                            <br/>
+                            <input type="submit" value="Send"/>
+                        </form>
+                    </fieldset>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
