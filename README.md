@@ -54,6 +54,7 @@ The resulting spectrum image file is saved to the file with the same file name a
 | 2007 | [Transformers (2007) - Full Trailer HD](https://www.youtube.com/watch?v=dxQxgAfNzyE) | <img src="examples/Transformers%20%282007%29%20-%20Full%20Trailer%20%5BHD%5D-dxQxgAfNzyE.mp4.png"/> |
 | 2008 | [The Dark Knight - Official Trailer 2 HD](https://www.youtube.com/watch?v=TQfATDZY5Y4) | <img src="examples/The%20Dark%20Knight%20-%20Official%20Trailer%202%20%5BHD%5D-TQfATDZY5Y4.mp4.png"/> |
 | 2012 | [Marvel's The Avengers Trailer 2 (OFFICIAL)](https://www.youtube.com/watch?v=hIR8Ar-Z4hw) | <img src="examples/Marvel%27s%20The%20Avengers%20Trailer%202%20%28OFFICIAL%29-hIR8Ar-Z4hw.mp4.png"/> |
-| | []() | <img src="examples/"/> |
-| | []() | <img src="examples/"/> |
+| 2019 | [Joker Final Trailer (2019)](https://www.youtube.com/watch?v=rgXplohCw5o) | <img src="examples/Joker%20Final%20Trailer%20%282019%29%20_%20Movieclips%20Trailers-rgXplohCw5o.mp4.png"/> |
+| 2019 | [Ad Astra](https://www.youtube.com/watch?v=P6AaSMfXHbA) | <img src="examples/Ad%20Astra%20_%20Official%20Trailer%20%5BHD%5D%20_%2020th%20Century%20FOX-P6AaSMfXHbA.mp4.png"/> |
+| 2020 | [TENET - Official Trailer](https://www.youtube.com/watch?v=LdOM0x0XDMo) | <img src="examples/TENET%20-%20Official%20Trailer-LdOM0x0XDMo.mp4.png"/> |
 | | []() | <img src="examples/"/> |
