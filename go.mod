@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/3d0c/gmf v0.0.0-20200614092945-e58d8d5a6035
-	github.com/akavel/polyclip-go v0.0.0-20160111220610-2cfdb71461bd
+	github.com/gin-gonic/gin v1.6.3
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.0.3
 	github.com/sirupsen/logrus v1.7.0
