@@ -30,11 +30,7 @@ func main() {
 			case img = <-spectrumPromise:
 				log.Infof("Converted the spectrum to an image")
 			case <-time.After(1 * time.Second):
-				log.Infof(
-					"Processed frames: source %d, converted %d",
-					frameProducer.ConsumedCount(),
-					spectrumProducer.ConsumedCount(),
-				)
+				log.Infof("Processed frames %d", frameProducer.Count())
 			}
 		}
 		outImgFileName := videoFileName + ".png"

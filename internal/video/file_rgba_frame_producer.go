@@ -136,6 +136,6 @@ func (ctx *FileRgbaFramesProducer) close() {
 	gmf.Release(ctx.encoderCtx)
 }
 
-func (ctx *FileRgbaFramesProducer) ConsumedCount() uint64 {
-	return ctx.frameProducer.ConsumedCount()
+func (ctx *FileRgbaFramesProducer) Count() uint64 {
+	return ctx.frameProducer.Count()
 }

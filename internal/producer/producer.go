@@ -2,5 +2,5 @@ package producer
 
 type Producer interface {
 	Produce()
-	ConsumedCount() uint64
+	Count() uint64
 }
