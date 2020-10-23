@@ -48,5 +48,12 @@ The resulting spectrum image file is saved to the file with the same file name a
 | 1995 | [Braveheart Trailer - 1995 HQ](https://www.youtube.com/watch?v=1cnoM8EiGGU) | <img src="examples/Braveheart%20Trailer%20-%201995%20HQ-1cnoM8EiGGU.mp4.png"/> |
 | 1997 | [Titanic (1997) - Original Trailer](https://www.youtube.com/watch?v=jUm88F3MEbQ) | <img src="examples/Titanic%20%281997%29%20-%20Original%20Trailer-jUm88F3MEbQ.mp4.png"/> |
 | 1999 | [Matrix Trailer HD (1999)](https://www.youtube.com/watch?v=m8e-FF8MsqU) | <img src="examples/Matrix%20Trailer%20HD%20%281999%29-m8e-FF8MsqU.mp4.png"/> |
+| 2001 | [Shrek 2001 Official Trailer](https://www.youtube.com/watch?v=ooJJX3R42WM) | <img src="examples/Shrek%202001%20Official%20Trailer-ooJJX3R42WM.mp4.png"/> |
+| 2003 | [The Lord of the Rings: The Two Towers (2002) Official Trailer #2 - Orlando Bloom Movie HD](https://www.youtube.com/watch?v=LbfMDwc4azU) | <img src="examples/The%20Lord%20of%20the%20Rings%20-%20The%20Two%20Towers%20%282002%29%20Official%20Trailer%20%232%20-%20Orlando%20Bloom%20Movie%20HD-LbfMDwc4azU.mp4.png"/> |
+| 2003 | [Pirates of the Caribbean: The Curse of the Black Pearl Official Trailer 1 (2003) HD](https://www.youtube.com/watch?v=naQr0uTrH_s) | <img src="examples/Pirates%20of%20the%20Caribbean%20-%20The%20Curse%20of%20the%20Black%20Pearl%20Official%20Trailer%201%20%282003%29%20HD-naQr0uTrH_s.mp4.png"/>
 | 2007 | [Transformers (2007) - Full Trailer HD](https://www.youtube.com/watch?v=dxQxgAfNzyE) | <img src="examples/Transformers%20%282007%29%20-%20Full%20Trailer%20%5BHD%5D-dxQxgAfNzyE.mp4.png"/> |
 | 2008 | [The Dark Knight - Official Trailer 2 HD](https://www.youtube.com/watch?v=TQfATDZY5Y4) | <img src="examples/The%20Dark%20Knight%20-%20Official%20Trailer%202%20%5BHD%5D-TQfATDZY5Y4.mp4.png"/> |
+| 2012 | [Marvel's The Avengers Trailer 2 (OFFICIAL)](https://www.youtube.com/watch?v=hIR8Ar-Z4hw) | <img src="examples/Marvel%27s%20The%20Avengers%20Trailer%202%20%28OFFICIAL%29-hIR8Ar-Z4hw.mp4.png"/> |
+| | []() | <img src="examples/"/> |
+| | []() | <img src="examples/"/> |
+| | []() | <img src="examples/"/> |
