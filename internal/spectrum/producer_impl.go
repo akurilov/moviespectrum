@@ -14,11 +14,11 @@ const (
 type ProducerImpl struct {
 	log        *logrus.Entry
 	frameInput <-chan *image.RGBA
-	out        chan<- *image.RGBA
+	out        chan<- *Spectrum
 	count      uint64
 }
 
-func NewProducerImpl(frameInput <-chan *image.RGBA, out chan<- *image.RGBA) *ProducerImpl {
+func NewProducerImpl(frameInput <-chan *image.RGBA, out chan<- *Spectrum) *ProducerImpl {
 	log := logrus.WithFields(logrus.Fields{})
 	return &ProducerImpl{log, frameInput, out, 0}
 }
@@ -44,13 +44,8 @@ func (ctx *ProducerImpl) Produce() {
 		}
 	}
 	atomic.AddUint64(&ctx.count, 1)
-	logrus.Info("Finished the spectrum accumulatiom, converting to the image")
-	spectrumImg, err := accumulator.ToImage()
-	if err == nil {
-		ctx.out <- spectrumImg
-	} else {
-		logrus.Errorf("failed to generate the spectrum image: %v", err)
-	}
+	logrus.Info("Finished the spectrum accumulation, converting to the image")
+	ctx.out <- accumulator
 	close(ctx.out)
 }
 

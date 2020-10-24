@@ -3,10 +3,9 @@ package spectrum
 import (
 	"errors"
 	"fmt"
-	"github.com/akurilov/moviespectrum/internal/draw"
+	"github.com/ajstarks/svgo"
 	"github.com/lucasb-eyer/go-colorful"
-	"image"
-	"image/color"
+	"io"
 )
 
 const (
@@ -62,26 +61,28 @@ func (ctx *Spectrum) normalize() []float64 {
 	return normalizedLevels
 }
 
-func (ctx *Spectrum) ToImage() (*image.RGBA, error) {
-	normalizedLevels := ctx.normalize()
+func (ctx *Spectrum) ToSvgImage(output io.Writer) {
+	svgImg := svg.New(output)
 	width := int(ctx.colorResolution)
 	height := int(ctx.levelResolution)
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	var err error = nil
+	svgImg.Start(width, height)
+	normalizedLevels := ctx.normalize()
 	const s = 1
-	lineColor := &color.RGBA{R: 255, G: 255, B: 255, A: 128}
-	var pointFrom *image.Point
+	polyLineXs := make([]int, 0)
+	polyLineYs := make([]int, 0)
 	for i, l := range normalizedLevels {
 		h := float64(HueRange*i) / float64(ctx.colorResolution)
 		colColor := colorful.Hsl(h, s, l/2)
-		for j := 0; j < int(ctx.levelResolution); j++ {
-			img.Set(i, j, colColor)
-		}
-		pointTo := &image.Point{X: i, Y: int(float64(height) * (1 - l))}
-		if i > 0 {
-			draw.Line(img, lineColor, pointFrom, pointTo)
-		}
-		pointFrom = pointTo
+		svgImg.Rect(i, 0, i+1, height, "fill:"+ToCssColor(&colColor)+";stroke:none")
+		polyLineXs = append(polyLineXs, i)
+		polyLineYs = append(polyLineYs, int(float64(height)*(1-l)))
 	}
-	return img, err
+	svgImg.Polyline(polyLineXs, polyLineYs, "stroke:rgb(255,255,255,0.5);fill:none")
+	svgImg.End()
+}
+
+func ToCssColor(c *colorful.Color) string {
+	const CssColorRange = 256
+	r, g, b := CssColorRange*c.R, CssColorRange*c.G, CssColorRange*c.B
+	return fmt.Sprintf("rgba(%d, %d, %d, %f)", int(r), int(g), int(b), 0.5)
 }

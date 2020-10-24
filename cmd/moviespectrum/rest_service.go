@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"image"
-	"image/png"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -49,20 +48,16 @@ func handleUpload(ctx *gin.Context) {
 		defer func() { _ = os.Remove(localTmpFileName) }()
 		err = ctx.SaveUploadedFile(fileHeader, localTmpFileName)
 	}
-	var img *image.RGBA
-	if err == nil {
-		img, err = videoFileToSpectrumImage(localTmpFileName)
-	}
 	var imgBytes []byte
 	if err == nil {
 		imgBytes = make([]byte, 0)
 		imgBuff := bytes.NewBuffer(imgBytes)
 		imgWriter := io.Writer(imgBuff)
-		err = png.Encode(imgWriter, img)
+		err = writeVideoFileSpectrumSvg(localTmpFileName, imgWriter)
 		imgBytes = imgBuff.Bytes()
 	}
 	if err == nil {
-		ctx.Data(http.StatusOK, "image/png", imgBytes)
+		ctx.Data(http.StatusOK, "image/svg+xml", imgBytes)
 	} else {
 		err = ctx.Error(err)
 	}
@@ -71,23 +66,26 @@ func handleUpload(ctx *gin.Context) {
 	}
 }
 
-func videoFileToSpectrumImage(videoFileName string) (*image.RGBA, error) {
-	var img *image.RGBA
+func writeVideoFileSpectrumSvg(videoFileName string, out io.Writer) error {
+	var s *spectrum.Spectrum
 	frameBuff := make(chan *image.RGBA, 100)
 	frameProducer, err := video.NewFileRgbaFramesProducer(videoFileName, frameBuff)
 	if err == nil {
-		spectrumPromise := make(chan *image.RGBA)
+		spectrumPromise := make(chan *spectrum.Spectrum)
 		spectrumProducer := spectrum.NewProducerImpl(frameBuff, spectrumPromise)
 		go frameProducer.Produce()
 		go spectrumProducer.Produce()
-		for img == nil {
+		for s == nil {
 			select {
-			case img = <-spectrumPromise:
+			case s = <-spectrumPromise:
 				log.Infof("Converted the spectrum to an image")
 			case <-time.After(1 * time.Second):
 				log.Infof("Processed frames %d", frameProducer.Count())
 			}
 		}
 	}
-	return img, err
+	if s != nil {
+		s.ToSvgImage(out)
+	}
+	return err
 }
