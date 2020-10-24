@@ -4,12 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ajstarks/svgo"
+	"github.com/akurilov/moviespectrum/internal/video"
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/sirupsen/logrus"
+	"image"
 	"io"
+	"time"
 )
 
 const (
-	HueRange = 360
+	CssColorRange = 256
+	FrameBuffSize = 100
+	HueRange      = 360
 )
 
 type Spectrum struct {
@@ -82,7 +88,31 @@ func (ctx *Spectrum) ToSvgImage(output io.Writer) {
 }
 
 func ToCssColor(c *colorful.Color) string {
-	const CssColorRange = 256
 	r, g, b := CssColorRange*c.R, CssColorRange*c.G, CssColorRange*c.B
 	return fmt.Sprintf("rgba(%d, %d, %d, %f)", int(r), int(g), int(b), 0.5)
+}
+
+func WriteVideoFileSpectrumSvg(videoFileName string, out io.Writer) error {
+	var s *Spectrum
+	log := logrus.WithFields(logrus.Fields{})
+	frameBuff := make(chan *image.RGBA, FrameBuffSize)
+	frameProducer, err := video.NewFileRgbaFramesProducer(videoFileName, frameBuff)
+	if err == nil {
+		spectrumPromise := make(chan *Spectrum)
+		spectrumProducer := NewProducerImpl(frameBuff, spectrumPromise)
+		go frameProducer.Produce()
+		go spectrumProducer.Produce()
+		for s == nil {
+			select {
+			case s = <-spectrumPromise:
+				break
+			case <-time.After(1 * time.Second):
+				log.Infof("Processed frames %d", frameProducer.Count())
+			}
+		}
+	}
+	if s != nil {
+		s.ToSvgImage(out)
+	}
+	return err
 }
