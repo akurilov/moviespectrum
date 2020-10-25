@@ -13,5 +13,5 @@ RUN mkdir /opt/moviespectrum && apk add --no-cache ffmpeg-libs
 COPY --from=0 /go/moviespectrum/rest-service /opt/moviespectrum/rest-service
 ADD assets /opt/moviespectrum/assets
 WORKDIR /opt/moviespectrum
-EXPOSE 80/tcp
+EXPOSE 8080/tcp
 ENTRYPOINT ["/opt/moviespectrum/rest-service"]
