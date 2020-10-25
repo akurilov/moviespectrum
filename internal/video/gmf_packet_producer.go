@@ -8,31 +8,45 @@ import (
 )
 
 type GmfPacketProducer struct {
-	log              *logrus.Entry
-	inputCtx         *gmf.FmtCtx
-	inputStreamIndex int
-	out              chan<- *gmf.Packet
-	count            uint64
+	log         *logrus.Entry
+	inputCtx    *gmf.FmtCtx
+	inputStream *gmf.Stream
+	out         chan<- *gmf.Packet
+	count       uint64
 }
 
-func NewGmfPacketProducer(inputCtx *gmf.FmtCtx, inputStreamIndex int, out chan<- *gmf.Packet) *GmfPacketProducer {
+func NewGmfPacketProducer(inputCtx *gmf.FmtCtx, inputStream *gmf.Stream, out chan<- *gmf.Packet) *GmfPacketProducer {
 	log := logrus.WithFields(logrus.Fields{})
 	return &GmfPacketProducer{
 		log,
 		inputCtx,
-		inputStreamIndex,
+		inputStream,
 		out,
 		0,
 	}
 }
 
 func (ctx *GmfPacketProducer) Produce() {
+	log := logrus.WithFields(logrus.Fields{})
+	duration := ctx.inputCtx.Duration()
+	log.Infof("Video duration: %f [s]", duration)
+	approxFrameCount := uint64(ctx.inputStream.GetAvgFrameRate().AVR().Av2qd() * duration)
+	log.Infof("Total frame count estimate: %d", approxFrameCount)
+	packetStepToPass := approxFrameCount / 1000 // considering that each packet corresponds to a frame
+	log.Infof("Pass every %dth frame", packetStepToPass)
+	inputStreamIndex := ctx.inputStream.Index()
 	ctx.log.Infof("Started producing src packets")
 	for {
 		srcPacket, err := ctx.inputCtx.GetNextPacket()
 		if err == nil {
-			if ctx.inputStreamIndex == srcPacket.StreamIndex() {
-				ctx.out <- srcPacket
+			if inputStreamIndex == srcPacket.StreamIndex() {
+				if packetStepToPass < 2 {
+					ctx.out <- srcPacket
+				} else if atomic.LoadUint64(&ctx.count)%packetStepToPass == 0 {
+					ctx.out <- srcPacket
+				} else {
+					srcPacket.Free() // discard
+				}
 				atomic.AddUint64(&ctx.count, 1)
 			}
 		} else {

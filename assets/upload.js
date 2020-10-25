@@ -14,15 +14,20 @@ if (!XMLHttpRequest.prototype.sendAsBinary) {
 
 const upload = (function () {
 
-    function ajaxSuccess() {
+    function handleSuccessResponse() {
         document.getElementById("result").innerHTML = this.responseText
+    }
+
+    function handleErrorResponse() {
+        document.getElementById("result").innerText = "<p style=\"color: red\">" + this.responseText + "</p>"
     }
 
     function submitData(oData) {
         /* the AJAX request... */
         var oAjaxReq = new XMLHttpRequest();
         oAjaxReq.submittedData = oData;
-        oAjaxReq.onload = ajaxSuccess;
+        oAjaxReq.onload = handleSuccessResponse;
+        oAjaxReq.onerror = handleErrorResponse;
         /* method is POST */
         oAjaxReq.open("post", oData.receiver, true);
         /* enctype is multipart/form-data */
