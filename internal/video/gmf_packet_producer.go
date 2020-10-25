@@ -7,6 +7,10 @@ import (
 	"sync/atomic"
 )
 
+const (
+	FrameCountLimit = 2712
+)
+
 type GmfPacketProducer struct {
 	log         *logrus.Entry
 	inputCtx    *gmf.FmtCtx
@@ -27,13 +31,12 @@ func NewGmfPacketProducer(inputCtx *gmf.FmtCtx, inputStream *gmf.Stream, out cha
 }
 
 func (ctx *GmfPacketProducer) Produce() {
-	log := logrus.WithFields(logrus.Fields{})
 	duration := ctx.inputCtx.Duration()
-	log.Infof("Video duration: %f [s]", duration)
+	ctx.log.Infof("Video duration: %f [s]", duration)
 	approxFrameCount := uint64(ctx.inputStream.GetAvgFrameRate().AVR().Av2qd() * duration)
-	log.Infof("Total frame count estimate: %d", approxFrameCount)
-	packetStepToPass := approxFrameCount / 1000 // considering that each packet corresponds to a frame
-	log.Infof("Pass every %dth frame", packetStepToPass)
+	ctx.log.Infof("Total frame count estimate: %d", approxFrameCount)
+	packetStepToPass := approxFrameCount / FrameCountLimit // considering that each packet corresponds to a frame
+	ctx.log.Infof("Pass every %dth frame", packetStepToPass)
 	inputStreamIndex := ctx.inputStream.Index()
 	ctx.log.Infof("Started producing src packets")
 	for {
