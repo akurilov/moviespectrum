@@ -7,6 +7,8 @@ A command line tool to generate the color spectrum for a given input video file.
 
 ## Usage
 
+### Command Line
+
 Build:
 ```
 go build -o moviespectrum-cli cmd/moviespectrum/cli.go
@@ -25,13 +27,31 @@ Run the tool:
 The resulting spectrum image file is saved to the file with the same file name as the source video with additional 
 ".png" extension.
 
+### Web 
+
+Build:
+```
+go build -o moviespectrum-rest-service cmd/moviespectrum/rest_service.go
+```
+
+Run the service:
+```
+./moviespectrum-rest-service
+```
+
+Then, open http://localhost:8080 in a browser
+
+### Cloud
+
+https://moviespectrum.azurewebsites.net/
+
 ## How it works
 
 1. Convert the source video to 256x144 RGB frames
 2. Convert each pixel to HSL
 3. Spectrum X axis is pixel's Hue
 4. Color weight = Saturation * Median lightness difference
-5. Median lightness difference = chi square for the pixel's lightness and lightness range middle 
+5. Median lightness difference = chi square difference for the pixel's lightness and lightness range middle 
 
 ## Some popular movies
 
